@@ -14,7 +14,7 @@ import java.util.List;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-    @Value("${FRONTEND_URL}")
+    @Value("${app.frontend-url}")
     private String frontendUrl;
 
 

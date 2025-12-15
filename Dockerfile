@@ -1,24 +1,22 @@
-# Stage 1: Build the application with Maven & Java 21
-FROM maven:3.9.3-eclipse-temurin-21 AS build
+# Stage 1: Build using Maven 3.9.3 with JDK 21
+FROM maven:3.9.3-jdk-21 AS build
 WORKDIR /app
 
-# Copy pom.xml first for dependency caching
+# Copy pom.xml first for caching
 COPY pom.xml .
 # Copy source code
 COPY src ./src
 
-# Build without running tests
+# Build the project
 RUN mvn clean package -DskipTests
 
-# Stage 2: Run the application with Java 21
+# Stage 2: Run using JDK 21
 FROM eclipse-temurin:21-jdk-jammy
 WORKDIR /app
 
-# Copy the built jar from stage 1
+# Copy built JAR
 COPY --from=build /app/target/*.jar app.jar
 
-# Expose backend port
 EXPOSE 8080
 
-# Run the app
 ENTRYPOINT ["java", "-jar", "app.jar"]

@@ -60,7 +60,7 @@ public class ImageProcessingService {
 
         // 1. Generate the final file path (e.g., /uploads/unique_name.jpg)
         String filename = UUID.randomUUID() + "_" + sanitizedOriginal;
-        File finalImageFile = new File(configuredUploadDir + filename);
+        File finalImageFile = new File(configuredUploadDir, filename);
 
         // 2. Save the RAW, unoptimized file content to the final path (FAST OPERATION).
         // This is necessary so the background thread has a file to read/overwrite.

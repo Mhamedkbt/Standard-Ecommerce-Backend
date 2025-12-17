@@ -36,25 +36,18 @@ public class SecurityConfig {
                         // 2. Allow public access for login/registration
                         .requestMatchers("/api/auth/**").permitAll()
 
-                        // 3. Allow public access to uploaded images (Necessary for frontend display)
-                        .requestMatchers("/uploads/**").permitAll()
+                                // Public
+                                .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
+                                .requestMatchers(HttpMethod.POST, "/api/orders").permitAll()
+                                .requestMatchers("/uploads/**").permitAll()
 
-                        // --- 🎯 CRITICAL FIX START: Open GET requests for public viewing ---
+                                // Admin only
+                                .requestMatchers("/api/products/**").hasAuthority("ROLE_ADMIN")
+                                .requestMatchers("/api/categories/**").hasAuthority("ROLE_ADMIN")
+                                .requestMatchers("/api/orders/**").hasAuthority("ROLE_ADMIN")
 
-                        // FIX A: Allow GET requests to /products for public Home Page
-                        .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
-
-                        // FIX B (The new one): Allow GET requests to /categories for public Home Page
-                        .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
-
-                        // 5. ✅ ALLOW POST /api/orders FOR EVERYONE
-                        .requestMatchers(HttpMethod.POST, "/api/orders").permitAll()
-
-
-                        // and ALL actions on /orders
-                        .requestMatchers("/api/products/**", "/api/orders/**", "/api/categories/**").hasAuthority("ROLE_ADMIN")
-
-                        // 5. Authenticate any other request not explicitly permitted above
+                                // Authenticate any other request not explicitly permitted above
                         .anyRequest().authenticated()
                 )
 

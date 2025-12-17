@@ -30,10 +30,10 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
 
-                        // 1. Always allow pre-flight OPTIONS requests
+                        // Always allow pre-flight OPTIONS requests
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // 2. Allow public access for login/registration
+                        // Allow public access for login/registration
                         .requestMatchers("/api/auth/**").permitAll()
 
                                 // Public

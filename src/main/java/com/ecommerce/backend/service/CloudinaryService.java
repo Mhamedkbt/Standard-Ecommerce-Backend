@@ -13,7 +13,7 @@ import java.util.Map;
 public class CloudinaryService {
 
     @Autowired
-    private Cloudinary cloudinary; // ✅ inject the bean
+    private Cloudinary cloudinary;
 
     public String uploadImage(MultipartFile file, String folder) throws IOException {
         Map<?, ?> uploadResult = cloudinary.uploader().upload(

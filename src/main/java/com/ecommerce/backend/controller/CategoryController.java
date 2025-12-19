@@ -25,25 +25,26 @@ public class CategoryController {
         return categoryRepository.findAll();
     }
 
+    // ✅ FIX: Use @RequestBody to receive JSON from React
     @PostMapping
-    public Category createCategory(
-            @RequestParam("name") String name,
-            @RequestParam(value = "imageFile", required = false) MultipartFile imageFile
-    ) throws IOException {
-        return categoryService.createCategory(name, imageFile);
+    public Category createCategory(@RequestBody Category category) {
+        return categoryRepository.save(category);
     }
 
+    // ✅ FIX: Use @RequestBody and update the existing entity
     @PutMapping("/{id}")
-    public Category updateCategory(
-            @PathVariable Long id,
-            @RequestParam("name") String name,
-            @RequestParam(value = "imageFile", required = false) MultipartFile imageFile
-    ) throws IOException {
-        return categoryService.updateCategory(id, name, imageFile);
+    public Category updateCategory(@PathVariable Long id, @RequestBody Category categoryDetails) {
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Category not found"));
+
+        category.setName(categoryDetails.getName());
+        category.setImage(categoryDetails.getImage()); // This is now the Cloudinary URL string
+
+        return categoryRepository.save(category);
     }
 
     @DeleteMapping("/{id}")
     public void deleteCategory(@PathVariable Long id) {
-        categoryService.deleteCategory(id);
+        categoryRepository.deleteById(id);
     }
 }

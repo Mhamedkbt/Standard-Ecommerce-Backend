@@ -16,9 +16,13 @@ public class CloudinaryService {
     private Cloudinary cloudinary;
 
     public String uploadImage(MultipartFile file, String folder) throws IOException {
+        // Using getInputStream() instead of getBytes() to save RAM
         Map<?, ?> uploadResult = cloudinary.uploader().upload(
-                file.getBytes(),
-                ObjectUtils.asMap("folder", folder)
+                file.getInputStream(),
+                ObjectUtils.asMap(
+                        "folder", folder,
+                        "resource_type", "auto" // Detects if it's jpg, png, etc.
+                )
         );
         return uploadResult.get("secure_url").toString();
     }

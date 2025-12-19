@@ -12,6 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/products")
@@ -21,7 +22,7 @@ public class ProductController {
     private ProductRepository productRepository;
 
     @Autowired
-    private CloudinaryService cloudinaryService; // ✅ ADDED
+    private CloudinaryService cloudinaryService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -49,7 +50,7 @@ public class ProductController {
             @RequestParam("category") String category,
             @RequestParam("description") String description,
             @RequestParam(value = "existingImages", required = false) String existingImagesJson,
-            @RequestPart(value = "images", required = false) List<MultipartFile> images
+            @RequestParam(value = "images", required = false) List<MultipartFile> images // Changed to RequestParam
     ) {
         try {
             Product product = new Product();
@@ -70,10 +71,15 @@ public class ProductController {
             }
 
             if (images != null && !images.isEmpty()) {
-                for (MultipartFile image : images) {
-                    String imageUrl = cloudinaryService.uploadImage(image, "products");
-                    imageList.add(imageUrl);
-                }
+                // PRO FIX: Parallel upload to avoid timeout
+                List<String> uploadedUrls = images.parallelStream().map(image -> {
+                    try {
+                        return cloudinaryService.uploadImage(image, "products");
+                    } catch (Exception e) {
+                        throw new RuntimeException("Cloudinary Error: " + e.getMessage());
+                    }
+                }).collect(Collectors.toList());
+                imageList.addAll(uploadedUrls);
             }
 
             product.setImages(imageList);
@@ -97,7 +103,7 @@ public class ProductController {
             @RequestParam("category") String category,
             @RequestParam("description") String description,
             @RequestParam(value = "existingImages", required = false) String existingImagesJson,
-            @RequestPart(value = "images", required = false) List<MultipartFile> newImages
+            @RequestParam(value = "images", required = false) List<MultipartFile> newImages // Changed to RequestParam
     ) {
         try {
             Product product = productRepository.findById(id)
@@ -120,10 +126,15 @@ public class ProductController {
             }
 
             if (newImages != null && !newImages.isEmpty()) {
-                for (MultipartFile image : newImages) {
-                    String imageUrl = cloudinaryService.uploadImage(image, "products");
-                    images.add(imageUrl);
-                }
+                // PRO FIX: Parallel upload
+                List<String> uploadedUrls = newImages.parallelStream().map(image -> {
+                    try {
+                        return cloudinaryService.uploadImage(image, "products");
+                    } catch (Exception e) {
+                        throw new RuntimeException("Cloudinary Error: " + e.getMessage());
+                    }
+                }).collect(Collectors.toList());
+                images.addAll(uploadedUrls);
             }
 
             product.setImages(images);

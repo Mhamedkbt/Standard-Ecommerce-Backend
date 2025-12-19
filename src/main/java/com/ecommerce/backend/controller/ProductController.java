@@ -7,6 +7,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -65,17 +66,16 @@ public class ProductController {
         return processAndSave(product, name, price, previousPrice, isAvailableStr, onPromotionStr, category, description, existingImagesJson, newImages);
     }
 
-    private Product processAndSave(Product product, String name, Double price, double prevPrice, String isAvail, String onPromo, String cat, String desc, String existJson, List<MultipartFile> files) {
+    @Transactional // Added: Ensures data integrity
+    protected Product processAndSave(Product product, String name, Double price, double prevPrice, String isAvail, String onPromo, String cat, String desc, String existJson, List<MultipartFile> files) {
         try {
             List<String> finalImageList = new ArrayList<>();
 
-            // 1. Parse Existing Images safely
             if (existJson != null && !existJson.isBlank() && !existJson.equals("null") && !existJson.equals("[]")) {
                 List<String> existing = objectMapper.readValue(existJson, new TypeReference<List<String>>() {});
                 finalImageList.addAll(existing);
             }
 
-            // 2. Upload New Images (Parallel processing for speed)
             if (files != null && !files.isEmpty()) {
                 List<String> newUrls = files.parallelStream()
                         .filter(file -> file != null && !file.isEmpty())
@@ -89,7 +89,6 @@ public class ProductController {
                 finalImageList.addAll(newUrls);
             }
 
-            // 3. Set Product Data
             product.setName(name);
             product.setPrice(price);
             product.setPreviousPrice(prevPrice);

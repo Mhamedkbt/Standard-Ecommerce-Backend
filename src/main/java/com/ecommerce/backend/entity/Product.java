@@ -3,8 +3,8 @@ package com.ecommerce.backend.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import com.fasterxml.jackson.annotation.JsonProperty; // 👈 REQUIRED IMPORT
-
+import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -20,16 +20,16 @@ public class Product {
     private Double price;
     private double previousPrice;
 
-    // FIX: Force Jackson to use "isAvailable" as the JSON key,
-    // instead of the default "available", matching the frontend code.
     @JsonProperty("isAvailable")
     private boolean isAvailable;
 
     private boolean onPromotion;
 
-    @Column(name = "description", columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT")
     private String description;
 
-    @ElementCollection
-    private List<String> images; // store URLs
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "product_images", joinColumns = @JoinColumn(name = "product_id"))
+    @Column(name = "image_url")
+    private List<String> images = new ArrayList<>(); // Fixed: Initialized
 }

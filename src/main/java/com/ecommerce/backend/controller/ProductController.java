@@ -13,6 +13,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/products")
@@ -75,23 +77,31 @@ public class ProductController {
         }
     }
 
-    // THIS IS THE METHOD YOU ASKED ABOUT
     private Product saveProductData(Product product, String name, Double price, double prevPrice, String isAvail, String onPromo, String cat, String desc, String existJson, List<MultipartFile> files) throws Exception {
 
         List<String> finalImageList = new ArrayList<>();
 
+        // 1. Handle Existing Images (Preserve order)
         if (existJson != null && !existJson.isBlank() && !existJson.equals("[]") && !existJson.equals("null")) {
             List<String> existing = objectMapper.readValue(existJson, new TypeReference<List<String>>() {});
             finalImageList.addAll(existing);
         }
 
+        // 2. Handle New Uploads (FIX: Parallel Upload to prevent 500 Timeouts)
         if (files != null && !files.isEmpty()) {
-            for (MultipartFile file : files) {
-                if (file != null && !file.isEmpty()) {
-                    String url = cloudinaryService.uploadImage(file, "products");
-                    finalImageList.add(url);
-                }
-            }
+            List<String> uploadedUrls = files.parallelStream()
+                    .filter(file -> file != null && !file.isEmpty())
+                    .map(file -> {
+                        try {
+                            return cloudinaryService.uploadImage(file, "products");
+                        } catch (Exception e) {
+                            return null;
+                        }
+                    })
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+
+            finalImageList.addAll(uploadedUrls);
         }
 
         product.setName(name);
@@ -102,7 +112,7 @@ public class ProductController {
         product.setCategory(cat);
         product.setDescription(desc);
 
-        // Sync the image list
+        // Update image list
         if (product.getImages() == null) {
             product.setImages(new ArrayList<>());
         } else {

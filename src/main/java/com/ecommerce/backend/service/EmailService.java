@@ -46,6 +46,7 @@ public class EmailService {
 
         } catch (Exception e) {
             System.err.println("❌ ERROR: Email failed: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }

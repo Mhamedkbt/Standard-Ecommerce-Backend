@@ -39,32 +39,29 @@ public class OrderController {
 
     @PostMapping
     public Order createOrder(@RequestBody Order order) {
-        // ✅ FIX: Add 1 hour to the date before saving
+        // 1. Fix the time
         if (order.getDate() != null) {
             order.setDate(order.getDate().plusHours(1));
         }
 
-        // 1. Save to DB (Your original logic)
+        // 2. Save to DB
         Order savedOrder = orderRepository.save(order);
 
-        // 2. Send Notification
-        try {
-            double totalAmount = 0;
-            if (savedOrder.getProducts() != null) {
-                totalAmount = savedOrder.getProducts().stream()
-                        .mapToDouble(p -> p.getPrice() * p.getQuantity())
-                        .sum();
-            }
-
-            emailService.sendOrderNotification(
-                    savedOrder.getCustomerName(),
-                    totalAmount,
-                    savedOrder.getId()
-            );
-        } catch (Exception e) {
-            // Log but don't break the response
-            System.err.println("Email failed: " + e.getMessage());
+        // 3. Calculate total
+        double totalAmount = 0;
+        if (savedOrder.getProducts() != null) {
+            totalAmount = savedOrder.getProducts().stream()
+                    .mapToDouble(p -> p.getPrice() * p.getQuantity())
+                    .sum();
         }
+
+        // 4. Send Notification (NO TRY-CATCH HERE)
+        // Let the @Async service handle the background work and logging
+        emailService.sendOrderNotification(
+                savedOrder.getCustomerName(),
+                totalAmount,
+                savedOrder.getId()
+        );
 
         return savedOrder;
     }

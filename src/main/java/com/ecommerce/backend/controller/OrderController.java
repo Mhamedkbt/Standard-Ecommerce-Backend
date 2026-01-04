@@ -3,6 +3,7 @@ package com.ecommerce.backend.controller;
 import com.ecommerce.backend.entity.Order;
 import com.ecommerce.backend.repository.OrderRepository;
 import com.ecommerce.backend.service.OrderService;
+import com.ecommerce.backend.service.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,26 +21,47 @@ public class OrderController {
     @Autowired
     private OrderService orderService;
 
-    // ✅ GET ALL
+    @Autowired
+    private EmailService emailService;
+
     @GetMapping
     public List<Order> getAllOrders() {
         return orderRepository.findAll();
     }
 
-    // ✅ GET ONE
     @GetMapping("/{id}")
     public Order getOrder(@PathVariable Long id) {
         return orderRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
     }
 
-    // ✅ CREATE (CITY WORKS AUTOMATICALLY)
     @PostMapping
     public Order createOrder(@RequestBody Order order) {
-        return orderRepository.save(order);
+        // 1. Save to DB
+        Order savedOrder = orderRepository.save(order);
+
+        // 2. Async-like Email Logic (wrapped in try-catch)
+        try {
+            double totalAmount = 0;
+            if (savedOrder.getProducts() != null) {
+                totalAmount = savedOrder.getProducts().stream()
+                        .mapToDouble(p -> p.getPrice() * p.getQuantity())
+                        .sum();
+            }
+
+            emailService.sendOrderNotification(
+                    savedOrder.getCustomerName(),
+                    totalAmount,
+                    savedOrder.getId()
+            );
+        } catch (Exception e) {
+            // Log the error but return the order so the user doesn't get a 500 error
+            System.err.println("Notification Error: " + e.getMessage());
+        }
+
+        return savedOrder;
     }
 
-    // ✅ UPDATE (CITY ADDED)
     @PutMapping("/{id}")
     public Order updateOrder(@PathVariable Long id, @RequestBody Order orderDetails) {
         Order order = orderRepository.findById(id)
@@ -49,10 +71,7 @@ public class OrderController {
         order.setCustomerEmail(orderDetails.getCustomerEmail());
         order.setCustomerPhone(orderDetails.getCustomerPhone());
         order.setCustomerAddress(orderDetails.getCustomerAddress());
-
-        // ✅ CITY UPDATED HERE
         order.setCity(orderDetails.getCity());
-
         order.setDate(orderDetails.getDate());
         order.setStatus(orderDetails.getStatus());
         order.setProducts(orderDetails.getProducts());
@@ -60,18 +79,15 @@ public class OrderController {
         return orderRepository.save(order);
     }
 
-    // ✅ UPDATE STATUS ONLY
     @PutMapping("/{id}/status")
     public ResponseEntity<Order> updateOrderStatus(
             @PathVariable Long id,
             @RequestBody Map<String, String> body) {
-
         String status = body.get("status");
         Order updatedOrder = orderService.updateStatus(id, status);
         return ResponseEntity.ok(updatedOrder);
     }
 
-    // ✅ DELETE
     @DeleteMapping("/{id}")
     public void deleteOrder(@PathVariable Long id) {
         orderRepository.deleteById(id);

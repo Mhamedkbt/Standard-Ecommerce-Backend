@@ -12,7 +12,7 @@ public class KeepAliveService {
     @Value("${app.url}")
     private String appUrl;
 
-    // 🎯 600,000 ms = 10 minutes (Safe buffer for a real project)
+    // 🎯 600,000 ms = 10 minutes
     @Scheduled(fixedRate = 600000)
     public void keepAppAlive() {
         try {

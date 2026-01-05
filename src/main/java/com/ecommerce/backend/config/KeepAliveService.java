@@ -12,8 +12,7 @@ public class KeepAliveService {
     @Value("${app.url}")
     private String appUrl;
 
-    // 🎯 600,000 ms = 10 minutes
-    @Scheduled(fixedRate = 600000)
+    @Scheduled(fixedRate = 300000) // 5 minutes
     public void keepAppAlive() {
         try {
             // It now uses the URL from your Environment Variables
